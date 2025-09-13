@@ -30,11 +30,14 @@ jobs:
           sed -i "s/BUILD_TIME/$(date +%Y-%m-%dT%H:%M:%S)/g" main.go
           sed -i "s/COMMIT_ID_HASH/$(git rev-parse --short HEAD)/g" main.go
 
+          set CGO_ENABLED=false
+
           set GOOS=windows
           set GOARCH=amd64
           go mod tidy
           go build -o bin/m3u8dweb_windows_amd64.${{ github.ref_name }}.exe
           ls -l bin/m3u8dweb_windows_amd64.${{ github.ref_name }}.exe
+          file bin/m3u8dweb_windows_amd64.${{ github.ref_name }}.exe
 
           set GOOS=linux
           set GOARCH=amd64
