@@ -9,7 +9,7 @@ https://github.com/orestonce/m3u8d 的web前端实现
 2. 后端有个线程定时取“等待中”的任务，然后按照指示进行下载。为简化实现，在同一时间下载的任务数最大为1。
 3. 解析curl命令为http header信息（这点比qt版本的ui要清晰明白很多）
 4. 支持设置http、https、socks5代理
-5. 有[webapi文档](api.m3)
+5. 有[webapi文档](api.md)
 6. 命令行支持auth-basic、设置数据库文件路径、设置监听地址
 ````bash
 # 默认参数启动
