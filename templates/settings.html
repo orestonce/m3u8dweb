@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>m3u8d 下载管理器 - 系统设置</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body {
+            padding-top: 20px;
+            background-color: #f8f9fa;
+        }
+        .navbar {
+            margin-bottom: 30px;
+        }
+        .card {
+            max-width: 800px;
+            margin: 0 auto;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .card-body {
+            padding: 30px;
+        }
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        .settings-section {
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #eee;
+        }
+        .settings-section:last-child {
+            border-bottom: none;
+        }
+        .alert {
+            display: none;
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1050;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i class="fas fa-download me-2"></i>m3u8d 下载管理器
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/">
+                            <i class="fas fa-list me-1"></i>任务列表
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/new-download">
+                            <i class="fas fa-plus me-1"></i>新建下载
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/settings">
+                            <i class="fas fa-cog me-1"></i>设置
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="alert alert-success" role="alert">
+        设置已保存成功！
+    </div>
+
+    <div class="container">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0"><i class="fas fa-cogs me-2"></i>系统设置</h4>
+            </div>
+            <div class="card-body">
+                <form id="settings-form">
+                    <!-- 下载设置 -->
+                    <div class="settings-section">
+                        <h5><i class="fas fa-download me-2"></i>下载设置</h5>
+                        
+                        <div class="mb-3">
+                            <label for="save-location" class="form-label">默认保存位置</label>
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="save-location" value="{{.SaveLocation}}">
+                                <button class="btn btn-outline-secondary" type="button">浏览</button>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="temp-directory" class="form-label">临时文件目录</label>
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="temp-directory" value="{{.TempDirectory}}">
+                                <button class="btn btn-outline-secondary" type="button">浏览</button>
+                            </div>
+                            <small class="form-text text-muted">下载过程中的临时文件将保存在此目录</small>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="download-threads" class="form-label">默认下载线程数 [1-32]</label>
+                            <input type="number" class="form-control" id="download-threads" min="1" max="32" value="{{.DownloadThreads}}">
+                        </div>
+                    </div>
+                    
+                    <!-- TS文件设置 -->
+                    <div class="settings-section">
+                        <h5><i class="fas fa-file-video me-2"></i>TS文件设置</h5>
+                        
+                        <div class="mb-3">
+                            <label for="skip-ts-info" class="form-label">默认跳过的TS片段</label>
+                            <input type="text" class="form-control" id="skip-ts-info" placeholder="例如: 1-5,10" value="{{.SkipTSInfo}}">
+                            <small class="form-text text-muted">指定默认要跳过的TS片段，用逗号分隔，支持范围如1-5</small>
+                        </div>
+                        
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" id="keep-ts-files" {{if .KeepTSFiles}}checked{{end}}>
+                            <label class="form-check-label" for="keep-ts-files">
+                                保留TS片段文件（不自动删除）
+                            </label>
+                        </div>
+                        
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" id="no-merge-ts" {{if .NoMergeTS}}checked{{end}}>
+                            <label class="form-check-label" for="no-merge-ts">
+                                不合并TS文件
+                            </label>
+                        </div>
+                        
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" id="log-skipped-ts" {{if .LogSkippedTS}}checked{{end}}>
+                            <label class="form-check-label" for="log-skipped-ts">
+                                记录跳过的TS片段信息
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <!-- 网络设置 -->
+					<div class="settings-section">
+						<h5><i class="fas fa-wifi me-2"></i>网络设置</h5>
+
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" id="allow-insecure-https" {{if .AllowInsecureHTTPS }}checked{{end}}>
+                            <label class="form-check-label" for="allow-insecure-https">
+                                允许不安全的https请求
+                            </label>
+                        </div>
+
+						<div class="mb-3">
+							<label class="form-label">代理设置</label>
+							<select class="form-select" id="proxy-type">
+								<option value="none" {{if eq .ProxyType "none"}}selected{{end}}>无代理</option>
+								<option value="http" {{if eq .ProxyType "http"}}selected{{end}}>HTTP代理</option>
+								<option value="https" {{if eq .ProxyType "https"}}selected{{end}}>HTTPS代理</option>  <!-- 新增HTTPS选项 -->
+								<option value="socks5" {{if eq .ProxyType "socks5"}}selected{{end}}>SOCKS5代理</option>
+							</select>
+						</div>
+						
+						<div id="proxy-settings">
+							<div class="row mb-3">
+								<div class="col-md-6">
+									<label for="proxy-host" class="form-label">代理主机</label>
+									<input type="text" class="form-control" id="proxy-host" value="{{.ProxyHost}}">
+								</div>
+								<div class="col-md-6">
+									<label for="proxy-port" class="form-label">代理端口</label>
+									<input type="number" class="form-control" id="proxy-port" value="{{.ProxyPort}}">
+								</div>
+							</div>
+							
+							<div class="form-check mb-3">
+								<input class="form-check-input" type="checkbox" id="proxy-auth" {{if or (.ProxyUsername) (.ProxyPassword)}}checked{{end}}>
+								<label class="form-check-label" for="proxy-auth">
+									代理需要身份验证
+								</label>
+							</div>
+							
+							<div id="proxy-auth-fields" class="mb-3 {{if not (or (.ProxyUsername) (.ProxyPassword))}}d-none{{end}}">
+								<div class="row">
+									<div class="col-md-6">
+										<label for="proxy-username" class="form-label">用户名</label>
+										<input type="text" class="form-control" id="proxy-username" value="{{.ProxyUsername}}">
+									</div>
+									<div class="col-md-6">
+										<label for="proxy-password" class="form-label">密码</label>
+										<input type="password" class="form-control" id="proxy-password" value="{{.ProxyPassword}}">
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+                    <!-- 其他设置 -->
+                    <div class="settings-section">
+                        <h5><i class="fas fa-ellipsis-h me-2"></i>其他设置</h5>
+                        
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" id="use-server-file-time" {{if .UseServerFileTime}}checked{{end}}>
+                            <label class="form-check-label" for="use-server-file-time">
+                                使用服务器文件时间（而不是本地时间）
+                            </label>
+                        </div>
+                        
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" id="debug-log" {{if .DebugLog}}checked{{end}}>
+                            <label class="form-check-label" for="debug-log">
+                                启用调试日志
+                            </label>
+                            <small class="form-text text-muted">会生成详细的调试信息，可能影响性能</small>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-end gap-2">
+                        <button type="button" id="cancel-settings" class="btn btn-secondary">取消</button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-1"></i>保存设置
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // 获取DOM元素
+        const proxyType = document.getElementById('proxy-type');
+        const proxySettings = document.getElementById('proxy-settings');
+        const proxyAuth = document.getElementById('proxy-auth');
+        const proxyAuthFields = document.getElementById('proxy-auth-fields');
+        const alertMessage = document.querySelector('.alert');
+        
+        // 代理类型变更
+        proxyType.addEventListener('change', function() {
+            if (this.value === 'none') {
+                proxySettings.classList.add('d-none');
+            } else {
+                proxySettings.classList.remove('d-none');
+            }
+        });
+        
+        // 初始检查代理类型
+        if (proxyType.value === 'none') {
+            proxySettings.classList.add('d-none');
+        }
+        
+        // 代理身份验证显示/隐藏
+        proxyAuth.addEventListener('change', function() {
+            if (this.checked) {
+                proxyAuthFields.classList.remove('d-none');
+            } else {
+                proxyAuthFields.classList.add('d-none');
+            }
+        });
+        
+        // 取消按钮
+        document.getElementById('cancel-settings').addEventListener('click', function() {
+            window.location.href = '/';
+        });
+        
+        // 表单提交处理
+        document.getElementById('settings-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // 收集设置数据
+            const settingsData = {
+                save_location: document.getElementById('save-location').value,
+                temp_directory: document.getElementById('temp-directory').value,
+                download_threads: parseInt(document.getElementById('download-threads').value) || 8,
+                skip_ts_info: document.getElementById('skip-ts-info').value,
+                keep_ts_files: document.getElementById('keep-ts-files').checked,
+                no_merge_ts: document.getElementById('no-merge-ts').checked,
+                log_skipped_ts: document.getElementById('log-skipped-ts').checked,
+                proxy_type: proxyType.value,
+                proxy_host: document.getElementById('proxy-host').value,
+                proxy_port: parseInt(document.getElementById('proxy-port').value) || 0,
+                allow_insecure_https: document.getElementById('allow-insecure-https').checked,
+                use_server_file_time: document.getElementById('use-server-file-time').checked,
+                debug_log: document.getElementById('debug-log').checked
+            };
+            
+            // 如果需要代理身份验证
+            if (proxyAuth.checked) {
+                settingsData.proxy_username = document.getElementById('proxy-username').value;
+                settingsData.proxy_password = document.getElementById('proxy-password').value;
+            }
+            
+            // 发送请求到后端
+            fetch('/api/settings', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(settingsData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    // 显示成功消息
+                    alertMessage.style.display = 'block';
+                    
+                    // 3秒后隐藏消息
+                    setTimeout(() => {
+                        alertMessage.style.display = 'none';
+                    }, 3000);
+                } else {
+                    alert('保存设置失败');
+                }
+            })
+            .catch(error => {
+                console.error('错误:', error);
+                alert('保存失败，请重试');
+            });
+        });
+    </script>
+</body>
+</html>

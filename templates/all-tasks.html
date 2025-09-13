@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>m3u8d 下载管理器 - 任务列表</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body {
+            padding-top: 20px;
+            background-color: #f8f9fa;
+        }
+        .navbar {
+            margin-bottom: 30px;
+        }
+        .table-responsive {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            padding: 20px;
+        }
+        .progress {
+            height: 8px;
+        }
+        .status-badge {
+            font-size: 0.8rem;
+            padding: 3px 8px;
+        }
+        .action-btn {
+            padding: 2px 8px;
+        }
+        .status-bar-text {
+            font-size: 0.8rem;
+            color: #6c757d;
+            margin-top: 4px;
+            line-height: 1.2;
+        }
+        .modal-body pre {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+    </style>
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+    <div class="container">
+        <a class="navbar-brand" href="/">
+            <i class="fas fa-download me-2"></i>m3u8d 下载管理器
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav">
+                <li class="nav-item">
+                    <a class="nav-link active" href="/">
+                        <i class="fas fa-list me-1"></i>任务列表
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/new-download">
+                        <i class="fas fa-plus me-1"></i>新建下载
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/settings">
+                        <i class="fas fa-cog me-1"></i>设置
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<div class="container">
+    <div class="table-responsive">
+        <table class="table table-hover">
+            <thead>
+            <tr>
+                <th class="col-1"><input type="checkbox" class="form-check-input" id="select-all"></th>
+                <th class="col-2">文件名/URL</th>
+                <th class="col-2">文件大小</th>
+                <th class="col-3">进度</th>
+                <th class="col-2">状态</th>
+                <th class="col-2">操作</th>
+            </tr>
+            </thead>
+            <tbody id="task-table-body">
+            <!-- 任务列表将由JavaScript渲染 -->
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- 任务详情模态框 -->
+<div class="modal fade" id="taskDetailModal" tabindex="-1" aria-labelledby="taskDetailModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="taskDetailModalLabel">任务详情</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <!-- 错误信息面板 -->
+                <div id="errorPanel" class="card mb-3 d-none">
+                    <div class="card-header bg-danger text-white">
+                        <i class="fas fa-exclamation-triangle me-2"></i>错误信息
+                    </div>
+                    <div class="card-body">
+                        <pre id="errorContent" class="mb-0"></pre>
+                    </div>
+                </div>
+
+                <!-- 任务详情面板 -->
+                <div id="taskDetailPanel" class="card">
+                    <div class="card-header bg-info text-white">
+                        <i class="fas fa-info-circle me-2"></i>任务详情
+                    </div>
+                    <div class="card-body">
+                        <pre id="taskDetailContent" class="mb-0"></pre>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 初始化数据 - 由Golang模板注入 -->
+<script id="initial-tasks" type="application/json">
+    {{.TasksJSON}}
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    // 格式化文件大小
+    function formatSize(bytes) {
+        if (bytes === 0) return '0 B';
+        const k = 1024;
+        const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+
+    // 获取状态对应的样式类
+    function getStatusClass(status) {
+        switch(status) {
+            case '下载中':
+                return 'bg-primary';
+            case '已完成':
+                return 'bg-success';
+            case '失败':
+                return 'bg-danger';
+            case '已暂停':
+                return 'bg-warning';
+            default:
+                return 'bg-secondary';
+        }
+    }
+
+    // 显示任务详情
+    function showTaskDetail(task) {
+        const modal = new bootstrap.Modal(document.getElementById('taskDetailModal'));
+        const errorPanel = document.getElementById('errorPanel');
+        const errorContent = document.getElementById('errorContent');
+        const taskDetailContent = document.getElementById('taskDetailContent');
+
+        // 处理错误信息显示
+        if (task.err_msg && task.err_msg.trim() !== '') {
+            errorContent.textContent = task.err_msg;
+            errorPanel.classList.remove('d-none');
+        } else {
+            errorPanel.classList.add('d-none');
+            errorContent.textContent = '';
+        }
+
+        // 处理任务详情显示（排除err_msg字段）
+        const taskWithoutError = {...task};
+        delete taskWithoutError.err_msg;
+        taskDetailContent.textContent = JSON.stringify(taskWithoutError, null, 2);
+
+        modal.show();
+    }
+
+    // 渲染任务列表
+    function renderTasks(tasks) {
+        const tableBody = document.getElementById('task-table-body');
+        tableBody.innerHTML = '';
+
+        if (tasks.length === 0) {
+            tableBody.innerHTML = `
+                <tr>
+                    <td colspan="6" class="text-center py-4">
+                        <div class="text-muted">
+                            <i class="fas fa-file-search fa-3x mb-3"></i>
+                            <p>暂无下载任务，点击"新建下载任务"开始</p>
+                        </div>
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+
+        tasks.forEach(task => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td><input type="checkbox" class="form-check-input task-select" data-id="${task.id}"></td>
+                <td>
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-file-video text-warning me-3"></i>
+                        <div>
+                            <div>${task.filename}</div>
+                        </div>
+                    </div>
+                </td>
+                <td>${formatSize(task.size)}</td>
+                <td>
+                    <div class="progress" style="height: 8px;">
+                        <div class="progress-bar ${getStatusClass(task.status)}" role="progressbar"
+                             style="width: ${task.progress}%" aria-valuenow="${task.progress}"
+                             aria-valuemin="0" aria-valuemax="100"></div>
+                    </div>
+                    <small class="text-muted">${task.progress}%</small>
+                    <!-- 新增的status-bar文本 -->
+                    <div class="status-bar-text">${task.status_bar || ''}</div>
+                </td>
+                <td><span class="badge ${getStatusClass(task.status)} status-badge">${task.status}</span></td>
+                <td>
+                    <div class="btn-group btn-group-sm">
+                        ${task.status === '下载中' ? `
+                            <button class="btn btn-outline-secondary action-btn" onclick="pauseTask('${task.id}')">
+                                <i class="fas fa-pause"></i>
+                            </button>
+                        ` : `
+                            <button class="btn btn-outline-secondary action-btn" onclick="resumeTask('${task.id}')">
+                                <i class="fas fa-play"></i>
+                            </button>
+                        `}
+                        <!-- 新增的详情按钮 -->
+                        <button class="btn btn-outline-info action-btn" onclick="showTaskDetail(${JSON.stringify(task).replace(/"/g, '&quot;')})">
+                            <i class="fas fa-info-circle"></i>
+                        </button>
+                        <button class="btn btn-outline-secondary action-btn" onclick="deleteTask('${task.id}')">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </td>
+            `;
+            tableBody.appendChild(row);
+        });
+    }
+
+    // 全选/取消全选
+    document.getElementById('select-all').addEventListener('change', function() {
+        const checkboxes = document.querySelectorAll('.task-select');
+        checkboxes.forEach(checkbox => {
+            checkbox.checked = this.checked;
+        });
+    });
+
+    // 暂停任务
+    function pauseTask(id) {
+        fetch(`/api/tasks?id=${id}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ status: '已暂停' })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                fetchTasks(); // 重新获取并渲染任务列表
+            } else {
+                alert('暂停任务失败');
+            }
+        })
+        .catch(error => {
+            console.error('错误:', error);
+            alert('操作失败');
+        });
+    }
+
+    // 继续任务
+    function resumeTask(id) {
+        fetch(`/api/tasks?id=${id}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ status: '等待中' })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                fetchTasks(); // 重新获取并渲染任务列表
+            } else {
+                alert('继续任务失败');
+            }
+        })
+        .catch(error => {
+            console.error('错误:', error);
+            alert('操作失败');
+        });
+    }
+
+    // 删除任务
+    function deleteTask(id) {
+        if (confirm('确定要删除这个下载任务吗？')) {
+            fetch(`/api/tasks?id=${id}`, {
+                method: 'DELETE'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    fetchTasks(); // 重新获取并渲染任务列表
+                } else {
+                    alert('删除任务失败');
+                }
+            })
+            .catch(error => {
+                console.error('错误:', error);
+                alert('操作失败');
+            });
+        }
+    }
+
+    // 从API获取任务列表
+    function fetchTasks() {
+        fetch('/api/tasks')
+        .then(response => response.json())
+        .then(tasks => {
+            renderTasks(tasks);
+        })
+        .catch(error => console.error('获取任务列表失败:', error));
+    }
+
+    // 初始化页面
+    document.addEventListener('DOMContentLoaded', function() {
+        // 从页面获取初始数据并渲染
+        const initialTasks = JSON.parse(document.getElementById('initial-tasks').textContent);
+        renderTasks(initialTasks);
+
+        // 定时刷新任务状态
+        setInterval(fetchTasks, 3000);
+    });
+</script>
+</body>
+</html>

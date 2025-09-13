@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>m3u8d 下载管理器 - 新建下载</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body {
+            padding-top: 20px;
+            background-color: #f8f9fa;
+        }
+        .navbar {
+            margin-bottom: 30px;
+        }
+        .card {
+            max-width: 800px;
+            margin: 0 auto;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .card-body {
+            padding: 30px;
+        }
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        .settings-section {
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #eee;
+        }
+        .settings-section:last-child {
+            border-bottom: none;
+        }
+        .alert {
+            display: none;
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1050;
+        }
+        .advanced-options {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px dashed #ccc;
+        }
+        .table-responsive {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .table tbody tr.bg-primary {
+            background-color: #0d6efd;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+    <div class="container">
+        <a class="navbar-brand" href="/">
+            <i class="fas fa-download me-2"></i>m3u8d 下载管理器
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav">
+                <li class="nav-item">
+                    <a class="nav-link" href="/">
+                        <i class="fas fa-list me-1"></i>任务列表
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link active" href="/new-download">
+                        <i class="fas fa-plus me-1"></i>新建下载
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/settings">
+                        <i class="fas fa-cog me-1"></i>设置
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<div class="alert alert-success" role="alert">
+    下载任务已创建成功！
+</div>
+
+<div class="container">
+    <div class="card">
+        <div class="card-header bg-primary text-white">
+            <h4 class="mb-0"><i class="fas fa-plus-circle me-2"></i>新建下载任务</h4>
+        </div>
+        <div class="card-body">
+            <form id="new-download-form">
+                <!-- 基本设置 -->
+                <div class="settings-section">
+                    <h5><i class="fas fa-info-circle me-2"></i>基本设置</h5>
+
+                    <div class="mb-3">
+                        <label for="download-url" class="form-label">下载链接 (URL)</label>
+                        <input type="url" class="form-control" id="download-url" placeholder="https://example.com/file.zip" required>
+                        <div class="invalid-feedback">请输入有效的URL地址</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="save-filename" class="form-label">保存文件名</label>
+                        <input type="text" class="form-control" id="save-filename" placeholder="文件名" required>
+                        <div class="invalid-feedback">请输入有效的文件名（不能包含 \ / : * ? " < > | 等字符）</div>
+                    </div>
+
+                    <!-- 调整顺序：先显示HTTP头设置 -->
+                    <!-- HTTP头设置复选框 -->
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="show-http-headers">
+                        <label class="form-check-label" for="show-http-headers">
+                            <i class="fas fa-heading me-1"></i>设置Http头
+                        </label>
+                    </div>
+
+                    <!-- HTTP头设置区域 -->
+                    <div id="http-headers-settings" class="advanced-options d-none">
+                        <div class="settings-section">
+                            <h5><i class="fas fa-exchange-alt me-2"></i>HTTP请求头设置</h5>
+
+                            <!-- 按钮组 -->
+                            <div class="d-flex gap-2 mb-3">
+                                <button type="button" id="add-header-btn" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-plus me-1"></i>添加键值对
+                                </button>
+                                <button type="button" id="delete-header-btn" class="btn btn-sm btn-outline-danger" disabled>
+                                    <i class="fas fa-trash me-1"></i>删除选中
+                                </button>
+                                <button type="button" id="parse-curl-btn" class="btn btn-sm btn-outline-secondary">
+                                    <i class="fas fa-code me-1"></i>从curl解析
+                                </button>
+                            </div>
+
+                            <!-- 键值对表格 -->
+                            <div class="table-responsive">
+                                <table class="table table-striped table-hover">
+                                    <thead>
+                                    <tr>
+                                        <th>键 (Key)</th>
+                                        <th>值 (Value)</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody id="headers-table-body">
+                                    <!-- 键值对将通过JS动态添加 -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 然后显示高级选项 -->
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="advanced-options">
+                        <label class="form-check-label" for="advanced-options">
+                            <i class="fas fa-sliders-h me-1"></i>显示高级选项
+                        </label>
+                    </div>
+
+                    <!-- 高级选项 -->
+                    <div id="advanced-settings" class="advanced-options d-none">
+                        <!-- 下载设置 -->
+                        <div class="settings-section">
+                            <h5><i class="fas fa-download me-2"></i>下载设置</h5>
+
+                            <div class="mb-3">
+                                <label for="adv-save-location" class="form-label">保存位置</label>
+                                <div class="input-group">
+                                    <input type="text" class="form-control" id="adv-save-location" value="{{.Settings.SaveLocation}}">
+                                    <button class="btn btn-outline-secondary" type="button">浏览</button>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="adv-temp-directory" class="form-label">临时文件目录</label>
+                                <div class="input-group">
+                                    <input type="text" class="form-control" id="adv-temp-directory" value="{{.Settings.TempDirectory}}">
+                                    <button class="btn btn-outline-secondary" type="button">浏览</button>
+                                </div>
+                                <small class="form-text text-muted">下载过程中的临时文件将保存在此目录</small>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="adv-download-threads" class="form-label">下载线程数 [1-32]</label>
+                                <input type="number" class="form-control" id="adv-download-threads" min="1" max="32" value="{{.Settings.DownloadThreads}}">
+                            </div>
+                        </div>
+
+                        <!-- TS文件设置 -->
+                        <div class="settings-section">
+                            <h5><i class="fas fa-file-video me-2"></i>TS文件设置</h5>
+
+                            <div class="mb-3">
+                                <label for="adv-skip-ts-info" class="form-label">跳过的TS片段</label>
+                                <input type="text" class="form-control" id="adv-skip-ts-info" placeholder="例如: 1-5,10" value="{{.Settings.SkipTSInfo}}">
+                                <small class="form-text text-muted">指定要跳过的TS片段，用逗号分隔，支持范围如1-5</small>
+                            </div>
+
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="checkbox" id="adv-keep-ts-files" {{if .Settings.KeepTSFiles}}checked{{end}}>
+                                <label class="form-check-label" for="adv-keep-ts-files">
+                                    保留TS片段文件（不自动删除）
+                                </label>
+                            </div>
+
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="checkbox" id="adv-no-merge-ts" {{if .Settings.NoMergeTS}}checked{{end}}>
+                                <label class="form-check-label" for="adv-no-merge-ts">
+                                    不合并TS文件
+                                </label>
+                            </div>
+
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="checkbox" id="adv-log-skipped-ts" {{if .Settings.LogSkippedTS}}checked{{end}}>
+                                <label class="form-check-label" for="adv-log-skipped-ts">
+                                    记录跳过的TS片段信息
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- 网络设置 -->
+                        <div class="settings-section">
+                            <h5><i class="fas fa-wifi me-2"></i>网络设置</h5>
+
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="checkbox" id="allow-insecure-https" {{if .Settings.AllowInsecureHTTPS }}checked{{end}}>
+                                <label class="form-check-label" for="allow-insecure-https">
+                                    允许不安全的https请求
+                                </label>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">代理设置</label>
+                                <select class="form-select" id="adv-proxy-type">
+                                    <option value="none" {{if eq .Settings.ProxyType "none"}}selected{{end}}>无代理</option>
+                                    <option value="http" {{if eq .Settings.ProxyType "http"}}selected{{end}}>HTTP代理</option>
+                                    <option value="https" {{if eq .Settings.ProxyType "https"}}selected{{end}}>HTTPS代理</option>
+                                    <option value="socks5" {{if eq .Settings.ProxyType "socks5"}}selected{{end}}>SOCKS5代理</option>
+                                </select>
+                            </div>
+
+                            <div id="adv-proxy-settings">
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label for="adv-proxy-host" class="form-label">代理主机</label>
+                                        <input type="text" class="form-control" id="adv-proxy-host" value="{{.Settings.ProxyHost}}">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="adv-proxy-port" class="form-label">代理端口</label>
+                                        <input type="number" class="form-control" id="adv-proxy-port" value="{{.Settings.ProxyPort}}">
+                                    </div>
+                                </div>
+
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input" type="checkbox" id="adv-proxy-auth" {{if or (.Settings.ProxyUsername) (.Settings.ProxyPassword)}}checked{{end}}>
+                                    <label class="form-check-label" for="adv-proxy-auth">
+                                        代理需要身份验证
+                                    </label>
+                                </div>
+
+                                <div id="adv-proxy-auth-fields" class="mb-3 {{if not (or (.Settings.ProxyUsername) (.Settings.ProxyPassword))}}d-none{{end}}">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <label for="adv-proxy-username" class="form-label">用户名</label>
+                                            <input type="text" class="form-control" id="adv-proxy-username" value="{{.Settings.ProxyUsername}}">
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label for="adv-proxy-password" class="form-label">密码</label>
+                                            <input type="password" class="form-control" id="adv-proxy-password" value="{{.Settings.ProxyPassword}}">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- 其他设置 -->
+                        <div class="settings-section">
+                            <h5><i class="fas fa-ellipsis-h me-2"></i>其他设置</h5>
+
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="checkbox" id="adv-use-server-file-time" {{if .Settings.UseServerFileTime}}checked{{end}}>
+                                <label class="form-check-label" for="adv-use-server-file-time">
+                                    使用服务器文件时间（而不是本地时间）
+                                </label>
+                            </div>
+
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="checkbox" id="adv-debug-log" {{if .Settings.DebugLog}}checked{{end}}>
+                                <label class="form-check-label" for="adv-debug-log">
+                                    启用调试日志
+                                </label>
+                                <small class="form-text text-muted">会生成详细的调试信息，可能影响性能</small>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <div class="d-flex justify-content-end gap-2">
+                    <button type="button" id="cancel-download" class="btn btn-secondary">取消</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-plus-circle me-1"></i>创建下载任务
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- 添加/编辑Header的模态框 -->
+<div class="modal fade" id="header-modal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="header-modal-title">添加HTTP头</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label for="header-key" class="form-label">键 (Key)</label>
+                    <!-- 编辑时key不可编辑，添加readonly属性 -->
+                    <input type="text" class="form-control" id="header-key" required>
+                </div>
+                <div class="mb-3">
+                    <label for="header-value" class="form-label">值 (Value)</label>
+                    <input type="text" class="form-control" id="header-value" required>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" id="save-header-btn">保存</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 解析curl的模态框 -->
+<div class="modal fade" id="curl-parser-modal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">从curl命令解析HTTP头。chrome右键-以cURL(bash)格式复制</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label for="curl-command" class="form-label">curl命令</label>
+                    <textarea class="form-control" id="curl-command" rows="6" placeholder="粘贴curl命令，例如：&#10;curl 'https://example.com' \&#10;  -H 'Accept: text/html' \&#10;  -H 'User-Agent: Mozilla/5.0'"></textarea>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="override-url" checked>
+                    <label class="form-check-label" for="override-url">
+                        覆盖URL地址
+                    </label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" id="parse-curl-execute">解析并导入</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    // 获取DOM元素
+    const advancedOptions = document.getElementById('advanced-options');
+    const advancedSettings = document.getElementById('advanced-settings');
+    const proxyType = document.getElementById('adv-proxy-type');
+    const proxySettings = document.getElementById('adv-proxy-settings');
+    const proxyAuth = document.getElementById('adv-proxy-auth');
+    const proxyAuthFields = document.getElementById('adv-proxy-auth-fields');
+    const alertMessage = document.querySelector('.alert');
+
+    // 高级选项显示/隐藏
+    advancedOptions.addEventListener('change', function() {
+        if (this.checked) {
+            advancedSettings.classList.remove('d-none');
+        } else {
+            advancedSettings.classList.add('d-none');
+        }
+    });
+
+    // 代理类型变更
+    proxyType.addEventListener('change', function() {
+        if (this.value === 'none') {
+            proxySettings.classList.add('d-none');
+        } else {
+            proxySettings.classList.remove('d-none');
+        }
+    });
+
+    // 初始检查代理类型
+    if (proxyType.value === 'none') {
+        proxySettings.classList.add('d-none');
+    }
+
+    // 代理身份验证显示/隐藏
+    proxyAuth.addEventListener('change', function() {
+        if (this.checked) {
+            proxyAuthFields.classList.remove('d-none');
+        } else {
+            proxyAuthFields.classList.add('d-none');
+        }
+    });
+
+    // 取消按钮
+    document.getElementById('cancel-download').addEventListener('click', function() {
+        window.location.href = '/';
+    });
+
+    // HTTP头设置相关元素
+    const showHttpHeaders = document.getElementById('show-http-headers');
+    const httpHeadersSettings = document.getElementById('http-headers-settings');
+    const headersTableBody = document.getElementById('headers-table-body');
+    const addHeaderBtn = document.getElementById('add-header-btn');
+    const deleteHeaderBtn = document.getElementById('delete-header-btn');
+    const parseCurlBtn = document.getElementById('parse-curl-btn');
+    const headerModal = new bootstrap.Modal(document.getElementById('header-modal'));
+    const headerModalTitle = document.getElementById('header-modal-title');
+    const headerKeyInput = document.getElementById('header-key');
+    const headerValueInput = document.getElementById('header-value');
+    const saveHeaderBtn = document.getElementById('save-header-btn');
+    const curlParserModal = new bootstrap.Modal(document.getElementById('curl-parser-modal'));
+    const curlCommandInput = document.getElementById('curl-command');
+    const overrideUrlCheckbox = document.getElementById('override-url');
+    const parseCurlExecuteBtn = document.getElementById('parse-curl-execute');
+
+    // 当前编辑的行索引
+    let currentEditingIndex = -1;
+    // 存储所有HTTP头
+    let httpHeaders = [];
+
+    // 显示/隐藏HTTP头设置
+    showHttpHeaders.addEventListener('change', function() {
+        if (this.checked) {
+            httpHeadersSettings.classList.remove('d-none');
+        } else {
+            httpHeadersSettings.classList.add('d-none');
+        }
+    });
+
+    // 刷新表格显示
+    function refreshHeadersTable() {
+        // 清空表格
+        headersTableBody.innerHTML = '';
+
+        // 按key排序
+        httpHeaders.sort((a, b) => a.key.localeCompare(b.key));
+
+        // 重新添加所有行
+        httpHeaders.forEach((header, index) => {
+            const row = document.createElement('tr');
+            row.dataset.index = index;
+
+            const keyCell = document.createElement('td');
+            keyCell.textContent = header.key;
+
+            const valueCell = document.createElement('td');
+            valueCell.textContent = header.value;
+
+            row.appendChild(keyCell);
+            row.appendChild(valueCell);
+
+            // 单击选中行
+            row.addEventListener('click', (e) => {
+                // 阻止事件冒泡到document
+                e.stopPropagation();
+                handleRowSelection(e, row, index);
+            });
+
+            // 双击编辑
+            row.addEventListener('dblclick', (e) => {
+                // 阻止事件冒泡到document
+                e.stopPropagation();
+                editHeader(index);
+            });
+
+            headersTableBody.appendChild(row);
+        });
+
+        // 更新删除按钮状态
+        updateDeleteButtonState();
+    }
+
+    // 处理行选择
+    function handleRowSelection(e, row, index) {
+        const isCtrlPressed = e.ctrlKey || e.metaKey;
+        const isShiftPressed = e.shiftKey;
+        const selectedRows = document.querySelectorAll('#headers-table-body tr.bg-primary');
+
+        // 如果按下Ctrl键，切换当前行的选中状态
+        if (isCtrlPressed) {
+            row.classList.toggle('bg-primary');
+            row.classList.toggle('text-white');
+        }
+        // 如果按下Shift键，选中从最后一个选中行到当前行的所有行
+        else if (isShiftPressed && selectedRows.length > 0) {
+            const lastSelectedIndex = parseInt(selectedRows[selectedRows.length - 1].dataset.index);
+            const start = Math.min(lastSelectedIndex, index);
+            const end = Math.max(lastSelectedIndex, index);
+
+            document.querySelectorAll('#headers-table-body tr').forEach((r, i) => {
+                if (i >= start && i <= end) {
+                    r.classList.add('bg-primary', 'text-white');
+                }
+            });
+        }
+        // 否则，只选中当前行
+        else {
+            // 清除所有选中状态
+            document.querySelectorAll('#headers-table-body tr').forEach(r => {
+                r.classList.remove('bg-primary', 'text-white');
+            });
+            // 选中当前行
+            row.classList.add('bg-primary', 'text-white');
+        }
+
+        // 更新删除按钮状态
+        updateDeleteButtonState();
+    }
+
+    // 更新删除按钮状态
+    function updateDeleteButtonState() {
+        const selectedCount = document.querySelectorAll('#headers-table-body tr.bg-primary').length;
+        deleteHeaderBtn.disabled = selectedCount === 0;
+    }
+
+    // 添加新的HTTP头
+    addHeaderBtn.addEventListener('click', () => {
+        headerModalTitle.textContent = '添加HTTP头';
+        headerKeyInput.value = '';
+        headerValueInput.value = '';
+        currentEditingIndex = -1;
+        // 添加时允许编辑key
+        headerKeyInput.removeAttribute('readonly');
+        headerKeyInput.classList.remove('bg-light');
+        headerModal.show();
+    });
+
+    // 编辑HTTP头
+    function editHeader(index) {
+        const header = httpHeaders[index];
+        headerModalTitle.textContent = '编辑HTTP头';
+        headerKeyInput.value = header.key;
+        headerValueInput.value = header.value;
+        currentEditingIndex = index;
+        // 编辑时禁止修改key
+        headerKeyInput.setAttribute('readonly', 'readonly');
+        headerKeyInput.classList.add('bg-light');
+        headerModal.show();
+    }
+
+    // 保存HTTP头
+    saveHeaderBtn.addEventListener('click', () => {
+        const key = headerKeyInput.value.trim();
+        const value = headerValueInput.value.trim();
+
+        if (!key) {
+            alert('请输入键名');
+            return;
+        }
+
+        // 检查键是否已存在（编辑时排除当前行）
+        const keyExists = httpHeaders.some((header, index) => {
+            return header.key === key && index !== currentEditingIndex;
+        });
+
+        if (keyExists) {
+            alert('该键名已存在');
+            return;
+        }
+
+        if (currentEditingIndex === -1) {
+            // 添加新的HTTP头
+            httpHeaders.push({ key, value });
+        } else {
+            // 更新现有HTTP头（只更新value，因为key不可编辑）
+            httpHeaders[currentEditingIndex].value = value;
+        }
+
+        headerModal.hide();
+        refreshHeadersTable();
+    });
+
+    // 删除选中的HTTP头
+    deleteHeaderBtn.addEventListener('click', () => {
+        const selectedRows = document.querySelectorAll('#headers-table-body tr.bg-primary');
+        const indicesToRemove = Array.from(selectedRows).map(row => parseInt(row.dataset.index));
+
+        // 从大到小排序，避免删除时索引变化影响结果
+        indicesToRemove.sort((a, b) => b - a);
+
+        indicesToRemove.forEach(index => {
+            httpHeaders.splice(index, 1);
+        });
+
+        refreshHeadersTable();
+    });
+
+    // 解析curl命令
+    parseCurlBtn.addEventListener('click', () => {
+        curlCommandInput.value = '';
+        curlParserModal.show();
+    });
+
+    // 执行curl解析并导入
+    parseCurlExecuteBtn.addEventListener('click', () => {
+        const curlCommand = curlCommandInput.value.trim();
+        if (!curlCommand) {
+            alert('请输入curl命令');
+            return;
+        }
+
+        // 解析curl命令中的URL
+        if (overrideUrlCheckbox.checked) {
+            // 改进的URL匹配正则表达式
+            const urlMatch = curlCommand.match(/curl\s+(?:[^'"]*?)['"]([^'"]+)['"]/);
+            if (urlMatch && urlMatch[1]) {
+                document.getElementById('download-url').value = urlMatch[1];
+            }
+        }
+
+        // 改进的HTTP头解析正则表达式
+        const headerRegex = /-H\s+(?:'([^:]+):\s*([^']+)'|"(.*?):\s*(.*?)")/g;
+        let headerMatch;
+
+        while ((headerMatch = headerRegex.exec(curlCommand)) !== null) {
+            let key, value;
+
+            // 处理单引号和双引号两种情况
+            if (headerMatch[1] && headerMatch[2]) {
+                key = headerMatch[1];
+                value = headerMatch[2];
+            } else if (headerMatch[3] && headerMatch[4]) {
+                key = headerMatch[3];
+                value = headerMatch[4];
+            } else {
+                continue; // 跳过无法解析的格式
+            }
+
+            // 检查是否已存在相同的键
+            const existingIndex = httpHeaders.findIndex(h => h.key === key);
+            if (existingIndex !== -1) {
+                // 更新现有值
+                httpHeaders[existingIndex].value = value;
+            } else {
+                // 添加新的键值对
+                httpHeaders.push({ key, value });
+            }
+        }
+
+        curlParserModal.hide();
+        refreshHeadersTable();
+    });
+
+    // 添加点击文档其他区域时清除选中状态的逻辑
+    document.addEventListener('click', (e) => {
+        // 检查点击是否发生在表格行内或相关按钮上
+        const isClickOnTableRow = e.target.closest('#headers-table-body tr');
+        const isClickOnHeaderButton = e.target.closest('#add-header-btn, #delete-header-btn, #parse-curl-btn');
+        const isClickOnModal = e.target.closest('.modal');
+
+        // 如果点击不在表格行内、相关按钮或模态框上，且存在选中的行，则清除选中状态
+        if (!isClickOnTableRow && !isClickOnHeaderButton && !isClickOnModal) {
+            const selectedRows = document.querySelectorAll('#headers-table-body tr.bg-primary');
+            if (selectedRows.length > 0) {
+                selectedRows.forEach(row => {
+                    row.classList.remove('bg-primary', 'text-white');
+                });
+                updateDeleteButtonState();
+            }
+        }
+    });
+
+    // 表单提交处理
+    document.getElementById('new-download-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        let isValid = true;
+
+        // URL验证
+        const urlInput = document.getElementById('download-url');
+        const url = urlInput.value.trim();
+        if (!url || !(url.startsWith('http://') || url.startsWith('https://'))) {
+            urlInput.classList.add('is-invalid');
+            isValid = false;
+        } else {
+            urlInput.classList.remove('is-invalid');
+        }
+
+        // 文件名验证
+        const filenameInput = document.getElementById('save-filename');
+        const filename = filenameInput.value.trim();
+        const invalidChars = /[\\/:*?"<>|]/;
+        if (!filename || invalidChars.test(filename)) {
+            filenameInput.classList.add('is-invalid');
+            isValid = false;
+        } else {
+            filenameInput.classList.remove('is-invalid');
+        }
+
+        if (isValid) {
+            // 收集表单数据
+            const formData = {
+                url: url,
+                filename: filename,
+                advanced: advancedOptions.checked,
+                use_http_headers: showHttpHeaders.checked
+            };
+
+            if(showHttpHeaders.checked) {
+                const headersMap = {};
+                httpHeaders.forEach(header => {
+                    const key = header.key;
+                    const value = header.value;
+
+                    // 如果键已存在，添加到数组中，否则创建新数组
+                    if (headersMap[key]) {
+                        headersMap[key].push(value);
+                    } else {
+                        headersMap[key] = [value];
+                    }
+                });
+                formData.http_headers = headersMap;
+            }
+
+            // 如果开启了高级选项，收集高级设置
+            if (advancedOptions.checked) {
+                formData.save_location = document.getElementById('adv-save-location').value;
+                formData.temp_directory = document.getElementById('adv-temp-directory').value;
+                formData.download_threads = parseInt(document.getElementById('adv-download-threads').value);
+                formData.skip_ts_info = document.getElementById('adv-skip-ts-info').value;
+                formData.keep_ts_files = document.getElementById('adv-keep-ts-files').checked;
+                formData.no_merge_ts = document.getElementById('adv-no-merge-ts').checked;
+                formData.log_skipped_ts = document.getElementById('adv-log-skipped-ts').checked;
+                formData.allow_insecure_https = document.getElementById('allow-insecure-https').checked;
+                formData.proxy_type = proxyType.value;
+                formData.proxy_host = document.getElementById('adv-proxy-host').value;
+                formData.proxy_port = parseInt(document.getElementById('adv-proxy-port').value) || 0;
+                formData.use_server_file_time = document.getElementById('adv-use-server-file-time').checked;
+                formData.debug_log = document.getElementById('adv-debug-log').checked;
+
+                // 如果需要代理身份验证
+                if (proxyAuth.checked) {
+                    formData.proxy_username = document.getElementById('adv-proxy-username').value;
+                    formData.proxy_password = document.getElementById('adv-proxy-password').value;
+                }
+            }
+
+            // 发送请求到后端
+            fetch('/api/tasks', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(formData)
+            })
+            .then(response => {
+                if (response.ok) {
+                    // 显示成功消息
+                    alertMessage.style.display = 'block';
+
+                    // 2秒后跳转到任务列表
+                    setTimeout(() => {
+                        window.location.href = '/';
+                    }, 2000);
+                } else {
+                    alert('创建下载任务失败');
+                }
+            })
+            .catch(error => {
+                console.error('错误:', error);
+                alert('提交失败，请重试');
+            });
+        }
+    });
+</script>
+</body>
+</html>
