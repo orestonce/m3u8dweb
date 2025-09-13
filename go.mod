@@ -1,6 +1,6 @@
 module m3u8dweb
 
-go 1.24.4
+go 1.24
 
 require (
 	github.com/orestonce/m3u8d v1.26.2
