@@ -73,7 +73,7 @@ jobs:
         uses: Guerra24/upload-to-release@v1
         with:
           name: m3u8dweb_linux_amd64.${{ github.ref_name }}
-          path: m3u8dweb_linux_amd64.${{ github.ref_name }}
+          path: bin/m3u8dweb_linux_amd64.${{ github.ref_name }}
           repo-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: upload release m3u8d_macos_amd64
