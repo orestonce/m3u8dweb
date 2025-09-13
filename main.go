@@ -9,6 +9,7 @@ import (
 	"m3u8dweb/db"
 	"m3u8dweb/handlers"
 	"net/http"
+	"runtime"
 )
 
 //go:embed templates/*
@@ -39,7 +40,7 @@ func main() {
 	handlers.GTemplateFs = &fs
 
 	// 打印版本信息
-	log.Printf("m3u8dweb - 版本: %s, 构建时间: %s, 提交: %s", version, buildTime, commit)
+	log.Printf("m3u8dweb - 版本: %s, 构建时间: %s, 提交: %s, GOOS：%s, GOARCH: %s", version, buildTime, commit, runtime.GOOS, runtime.GOARCH)
 
 	// 定义命令行参数
 	listenAddr := flag.String("listen", ":8080", "HTTP服务监听地址")

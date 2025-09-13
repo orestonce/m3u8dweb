@@ -7,9 +7,9 @@ on: push
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
   # This workflow contains a single job called "build"
-  build-test:
+  build-test-windows:
     # The type of runner that the job will run on
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
@@ -26,41 +26,114 @@ jobs:
              
       - name: build
         run: |
+          # 替换 VERSION_NO
+          (Get-Content main.go) -replace 'VERSION_NO', $env:GITHUB_REF_NAME | Set-Content main.go
+
+          # 替换 BUILD_TIME 为当前时间
+          $buildTime = Get-Date -Format "yyyy-MM-ddTHH:mm:ss"
+          (Get-Content main.go) -replace 'BUILD_TIME', $buildTime | Set-Content main.go
+
+          # 替换 COMMIT_ID_HASH 为当前Git提交的短哈希
+          $commitHash = git rev-parse --short HEAD
+          (Get-Content main.go) -replace 'COMMIT_ID_HASH', $commitHash | Set-Content main.go
+
+          go mod tidy
+          go build -o bin/m3u8dweb_windows_amd64.${{ github.ref_name }}.exe
+          ./bin/m3u8dweb_windows_amd64.${{ github.ref_name }}.exe --help
+
+  build-test-linux:
+    # The type of runner that the job will run on
+    runs-on: windows-latest
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v3
+
+      - name: Setup Go environment
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+          cache-dependency-path: |
+            ./go.sum
+            ./go.sum
+
+      - name: build
+        run: |
           sed -i "s/VERSION_NO/${{ github.ref_name }}/g" main.go
           sed -i "s/BUILD_TIME/$(date +%Y-%m-%dT%H:%M:%S)/g" main.go
           sed -i "s/COMMIT_ID_HASH/$(git rev-parse --short HEAD)/g" main.go
-
-          set CGO_ENABLED=false
-
-          set GOOS=windows
-          set GOARCH=amd64
-          go mod tidy
-          go build -o bin/m3u8dweb_windows_amd64.${{ github.ref_name }}.exe
-          ls -l bin/m3u8dweb_windows_amd64.${{ github.ref_name }}.exe
-          file bin/m3u8dweb_windows_amd64.${{ github.ref_name }}.exe
 
           set GOOS=linux
           set GOARCH=amd64
           go mod tidy
           go build -o bin/m3u8dweb_linux_amd64.${{ github.ref_name }}
-          ls -l bin/m3u8dweb_linux_amd64.${{ github.ref_name }}
-
-          set GOOS=macos
-          set GOARCH=amd64
-          go mod tidy
-          go build -o bin/m3u8dweb_macos_amd64.${{ github.ref_name }}
-          ls -l bin/m3u8dweb_macos_amd64.${{ github.ref_name }}
-
-          set GOOS=macos
-          set GOARCH=arm64
-          go mod tidy
-          go build -o bin/m3u8dweb_macos_arm64.${{ github.ref_name }}
-          ls -l bin/m3u8dweb_macos_arm64.${{ github.ref_name }}
+          ./bin/m3u8dweb_linux_amd64.${{ github.ref_name }} --help
 
           set GOOS=linux
           set GOARCH=mipsle
           go mod tidy
           go build -o bin/m3u8dweb_linux_mipsle.${{ github.ref_name }}
-          ls -l bin/m3u8dweb_linux_mipsle.${{ github.ref_name }}
+          file bin/m3u8dweb_linux_mipsle.${{ github.ref_name }}
 
-          ./bin/m3u8dweb_linux_amd64.${{ github.ref_name }} -h
+          #运行测试mipsle
+          apt-get update
+          apt-get install -y qemu-user-static  # 安装 QEMU 用户模式模拟器
+          qemu-mipsel-static --version
+          qemu-mipsel-static bin/m3u8dweb_linux_mipsle.${{ github.ref_name }}
+
+build-test-macos-arm64:
+  # The type of runner that the job will run on
+  runs-on: macos-14
+    # Steps represent a sequence of tasks that will be executed as part of the job
+  steps:
+    # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v3
+
+      - name: Setup Go environment
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+          cache-dependency-path: |
+            ./go.sum
+            ./go.sum
+
+      - name: build
+        run: |
+          sed -i "s/VERSION_NO/${{ github.ref_name }}/g" main.go
+          sed -i "s/BUILD_TIME/$(date +%Y-%m-%dT%H:%M:%S)/g" main.go
+          sed -i "s/COMMIT_ID_HASH/$(git rev-parse --short HEAD)/g" main.go
+
+          set GOOS=macos
+          set GOARCH=arm64
+          go mod tidy
+          go build -o bin/m3u8dweb_macos_arm64.${{ github.ref_name }}
+          ./bin/m3u8dweb_macos_arm64.${{ github.ref_name }} --help
+
+build-test-macos-amd64:
+  # The type of runner that the job will run on
+  runs-on: macos-13
+  # Steps represent a sequence of tasks that will be executed as part of the job
+  steps:
+    # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+    - uses: actions/checkout@v3
+
+    - name: Setup Go environment
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.24'
+        cache-dependency-path: |
+          ./go.sum
+          ./go.sum
+
+    - name: build
+      run: |
+        sed -i "s/VERSION_NO/${{ github.ref_name }}/g" main.go
+        sed -i "s/BUILD_TIME/$(date +%Y-%m-%dT%H:%M:%S)/g" main.go
+        sed -i "s/COMMIT_ID_HASH/$(git rev-parse --short HEAD)/g" main.go
+
+        set GOOS=macos
+        set GOARCH=amd64
+        go mod tidy
+        go build -o bin/m3u8dweb_macos_amd64.${{ github.ref_name }}
+        ./bin/m3u8dweb_macos_amd64.${{ github.ref_name }} --help
