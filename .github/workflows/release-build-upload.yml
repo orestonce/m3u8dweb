@@ -1,0 +1,98 @@
+# This is a basic workflow to help you get started with Actions
+
+name: release-build-upload
+
+# Controls when the workflow will run
+on: 
+  release:
+    types: [ created ]
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # This workflow contains a single job called "build"
+  build-upload:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v3
+    
+      - name: Setup Go environment
+        uses: actions/setup-go@v5
+        with:
+            go-version: '1.24'
+            cache-dependency-path: |
+             ./go.sum
+             ./go.sum
+             
+      - name: build
+        run: |
+          sed -i "s/VERSION_NO/${{ github.ref_name }}/g" main.go
+          sed -i "s/BUILD_TIME/$(date +%Y-%m-%dT%H:%M:%S)/g" main.go
+          sed -i "s/COMMIT_ID_HASH/$(git rev-parse --short HEAD)/g" main.go
+
+          set GOOS=windows
+          set GOARCH=amd64
+          go mod tidy
+          go build -o bin/m3u8dweb_windows_amd64.${{ github.ref_name }}.exe
+          ls -l bin/m3u8dweb_windows_amd64.${{ github.ref_name }}.exe
+
+          set GOOS=linux
+          set GOARCH=amd64
+          go mod tidy
+          go build -o bin/m3u8dweb_linux_amd64.${{ github.ref_name }}
+          ls -l bin/m3u8dweb_linux_amd64.${{ github.ref_name }}
+
+          set GOOS=macos
+          set GOARCH=amd64
+          go mod tidy
+          go build -o bin/m3u8dweb_macos_amd64.${{ github.ref_name }}
+          ls -l bin/m3u8dweb_macos_amd64.${{ github.ref_name }}
+
+          set GOOS=macos
+          set GOARCH=arm64
+          go mod tidy
+          go build -o bin/m3u8dweb_macos_arm64.${{ github.ref_name }}
+          ls -l bin/m3u8dweb_macos_arm64.${{ github.ref_name }}
+
+          set GOOS=linux
+          set GOARCH=mipsle
+          go mod tidy
+          go build -o bin/m3u8dweb_linux_mipsle.${{ github.ref_name }}
+          ls -l bin/m3u8dweb_linux_mipsle.${{ github.ref_name }}
+
+      - name: upload release m3u8dweb_windows_amd64
+        uses: Guerra24/upload-to-release@v1
+        with:
+          name: m3u8dweb_windows_amd64.${{ github.ref_name }}.exe
+          path: bin/m3u8dweb_windows_amd64.${{ github.ref_name }}.exe
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: upload release m3u8d_linux_amd64
+        uses: Guerra24/upload-to-release@v1
+        with:
+          name: m3u8dweb_linux_amd64.${{ github.ref_name }}
+          path: m3u8dweb_linux_amd64.${{ github.ref_name }}
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: upload release m3u8d_macos_amd64
+        uses: Guerra24/upload-to-release@v1
+        with:
+          name: m3u8dweb_macos_amd64.${{ github.ref_name }}
+          path: bin/m3u8dweb_macos_amd64.${{ github.ref_name }}
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: upload release m3u8d_macos_arm64
+        uses: Guerra24/upload-to-release@v1
+        with:
+          name: m3u8dweb_macos_arm64.${{ github.ref_name }}
+          path: bin/m3u8dweb_macos_arm64.${{ github.ref_name }}
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: upload release m3u8d_linux_mipsle
+        uses: Guerra24/upload-to-release@v1
+        with:
+          name: m3u8dweb_linux_mipsle.${{ github.ref_name }}
+          path: bin/m3u8dweb_linux_mipsle.${{ github.ref_name }}
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
