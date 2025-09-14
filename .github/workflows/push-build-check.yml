@@ -39,6 +39,9 @@ jobs:
 
           go mod tidy
           go build -o bin/m3u8dweb_windows_amd64.${{ github.ref_name }}.exe
+
+      - name: run-test
+          run: |
           ./bin/m3u8dweb_windows_amd64.${{ github.ref_name }}.exe --help
 
   build-test-linux:
@@ -58,6 +61,12 @@ jobs:
             ./go.sum
             ./go.sum
 
+      - name: install queue
+        run: |
+          apt-get update
+          apt-get install -y qemu-user-static  # 安装 QEMU 用户模式模拟器
+          qemu-mipsel-static --version
+
       - name: build
         run: |
           sed -i "s/VERSION_NO/${{ github.ref_name }}/g" main.go
@@ -76,10 +85,10 @@ jobs:
           go build -o bin/m3u8dweb_linux_mipsle.${{ github.ref_name }}
           file bin/m3u8dweb_linux_mipsle.${{ github.ref_name }}
 
+      - name: run-test
+          run: |
+          ./bin/m3u8dweb_linux_amd64.${{ github.ref_name }} --help
           #运行测试mipsle
-          apt-get update
-          apt-get install -y qemu-user-static  # 安装 QEMU 用户模式模拟器
-          qemu-mipsel-static --version
           qemu-mipsel-static bin/m3u8dweb_linux_mipsle.${{ github.ref_name }}
 
   build-test-macos-arm64:
@@ -100,7 +109,6 @@ jobs:
 
         - name: build
           run: |
-            cat main.go
             sed -i '' "s/VERSION_NO/${{ github.ref_name }}/g" main.go
             sed -i '' "s/BUILD_TIME/$(date +%Y-%m-%dT%H:%M:%S)/g" main.go
             sed -i '' "s/COMMIT_ID_HASH/$(git rev-parse --short HEAD)/g" main.go
@@ -109,6 +117,9 @@ jobs:
             set GOARCH=arm64
             go mod tidy
             go build -o bin/m3u8dweb_macos_arm64.${{ github.ref_name }}
+            
+        - name: run-test
+          run: |
             ./bin/m3u8dweb_macos_arm64.${{ github.ref_name }} --help
 
   build-test-macos-amd64:
@@ -137,4 +148,7 @@ jobs:
           set GOARCH=amd64
           go mod tidy
           go build -o bin/m3u8dweb_macos_amd64.${{ github.ref_name }}
+
+      - name: run-test
+          run: |
           ./bin/m3u8dweb_macos_amd64.${{ github.ref_name }} --help
