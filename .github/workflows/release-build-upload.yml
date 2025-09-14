@@ -85,11 +85,11 @@ jobs:
           ./bin/m3u8dweb_linux_amd64.${{ github.ref_name }} --help
 
       - name: upload release m3u8d_linux_amd64
-          uses: Guerra24/upload-to-release@v1
-          with:
-            name: m3u8dweb_linux_amd64.${{ github.ref_name }}
-            path: bin/m3u8dweb_linux_amd64.${{ github.ref_name }}
-            repo-token: ${{ secrets.GITHUB_TOKEN }}
+        uses: Guerra24/upload-to-release@v1
+        with:
+          name: m3u8dweb_linux_amd64.${{ github.ref_name }}
+          path: bin/m3u8dweb_linux_amd64.${{ github.ref_name }}
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
 
   linux-arm64_mipsle:
     # The type of runner that the job will run on
@@ -135,19 +135,19 @@ jobs:
           qemu-mipsel-static bin/m3u8dweb_linux_mipsle.${{ github.ref_name }} --help
 
       - name: upload release m3u8d_linux_arm64
-          uses: Guerra24/upload-to-release@v1
-          with:
-            name: m3u8dweb_linux_arm64.${{ github.ref_name }}
-            path: bin/m3u8dweb_linux_arm64.${{ github.ref_name }}
-            repo-token: ${{ secrets.GITHUB_TOKEN }}
+        uses: Guerra24/upload-to-release@v1
+        with:
+          name: m3u8dweb_linux_arm64.${{ github.ref_name }}
+          path: bin/m3u8dweb_linux_arm64.${{ github.ref_name }}
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: upload release m3u8d_linux_mipsle
-          uses: Guerra24/upload-to-release@v1
-          with:
-            name: m3u8dweb_linux_mipsle.${{ github.ref_name }}
-            path: bin/m3u8dweb_linux_mipsle.${{ github.ref_name }}
-            repo-token: ${{ secrets.GITHUB_TOKEN }}
-  
+        uses: Guerra24/upload-to-release@v1
+        with:
+          name: m3u8dweb_linux_mipsle.${{ github.ref_name }}
+          path: bin/m3u8dweb_linux_mipsle.${{ github.ref_name }}
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+
   macos-arm64:
     # The type of runner that the job will run on
     runs-on: macos-14
