@@ -41,7 +41,7 @@ jobs:
           go build -o bin/m3u8dweb_windows_amd64.${{ github.ref_name }}.exe
 
       - name: run-test
-          run: |
+        run: |
           ./bin/m3u8dweb_windows_amd64.${{ github.ref_name }}.exe --help
 
   build-test-linux:
@@ -86,7 +86,7 @@ jobs:
           file bin/m3u8dweb_linux_mipsle.${{ github.ref_name }}
 
       - name: run-test
-          run: |
+        run: |
           ./bin/m3u8dweb_linux_amd64.${{ github.ref_name }} --help
           #运行测试mipsle
           qemu-mipsel-static bin/m3u8dweb_linux_mipsle.${{ github.ref_name }}
@@ -97,30 +97,30 @@ jobs:
       # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-        - uses: actions/checkout@v3
+      - uses: actions/checkout@v3
 
-        - name: Setup Go environment
-          uses: actions/setup-go@v5
-          with:
-            go-version: '1.24'
-            cache-dependency-path: |
-              ./go.sum
-              ./go.sum
+      - name: Setup Go environment
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+          cache-dependency-path: |
+            ./go.sum
+            ./go.sum
 
-        - name: build
-          run: |
-            sed -i '' "s/VERSION_NO/${{ github.ref_name }}/g" main.go
-            sed -i '' "s/BUILD_TIME/$(date +%Y-%m-%dT%H:%M:%S)/g" main.go
-            sed -i '' "s/COMMIT_ID_HASH/$(git rev-parse --short HEAD)/g" main.go
+      - name: build
+        run: |
+          sed -i '' "s/VERSION_NO/${{ github.ref_name }}/g" main.go
+          sed -i '' "s/BUILD_TIME/$(date +%Y-%m-%dT%H:%M:%S)/g" main.go
+          sed -i '' "s/COMMIT_ID_HASH/$(git rev-parse --short HEAD)/g" main.go
 
-            set GOOS=macos
-            set GOARCH=arm64
-            go mod tidy
-            go build -o bin/m3u8dweb_macos_arm64.${{ github.ref_name }}
-            
-        - name: run-test
-          run: |
-            ./bin/m3u8dweb_macos_arm64.${{ github.ref_name }} --help
+          set GOOS=macos
+          set GOARCH=arm64
+          go mod tidy
+          go build -o bin/m3u8dweb_macos_arm64.${{ github.ref_name }}
+
+      - name: run-test
+        run: |
+          ./bin/m3u8dweb_macos_arm64.${{ github.ref_name }} --help
 
   build-test-macos-amd64:
     # The type of runner that the job will run on
@@ -150,5 +150,5 @@ jobs:
           go build -o bin/m3u8dweb_macos_amd64.${{ github.ref_name }}
 
       - name: run-test
-          run: |
+        run: |
           ./bin/m3u8dweb_macos_amd64.${{ github.ref_name }} --help
