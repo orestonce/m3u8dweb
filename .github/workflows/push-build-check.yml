@@ -7,7 +7,7 @@ on: push
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
   # This workflow contains a single job called "build"
-  build-test-windows:
+  windows:
     # The type of runner that the job will run on
     runs-on: windows-latest
 
@@ -44,7 +44,7 @@ jobs:
         run: |
           ./bin/m3u8dweb_windows_amd64.${{ github.ref_name }}.exe --help
 
-  build-test-linux:
+  linux:
     # The type of runner that the job will run on
     runs-on: linux-latest
 
@@ -91,7 +91,7 @@ jobs:
           #运行测试mipsle
           qemu-mipsel-static bin/m3u8dweb_linux_mipsle.${{ github.ref_name }}
 
-  build-test-macos-arm64:
+  macos-arm64:
     # The type of runner that the job will run on
     runs-on: macos-14
       # Steps represent a sequence of tasks that will be executed as part of the job
@@ -122,7 +122,7 @@ jobs:
         run: |
           ./bin/m3u8dweb_macos_arm64.${{ github.ref_name }} --help
 
-  build-test-macos-amd64:
+  macos-amd64:
     # The type of runner that the job will run on
     runs-on: macos-13
     # Steps represent a sequence of tasks that will be executed as part of the job
