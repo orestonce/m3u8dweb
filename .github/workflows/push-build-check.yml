@@ -63,8 +63,8 @@ jobs:
 
       - name: install queue
         run: |
-          apt-get update
-          apt-get install -y qemu-user-static  # 安装 QEMU 用户模式模拟器
+          sudo apt-get update
+          sudo apt-get install -y qemu-user-static  # 安装 QEMU 用户模式模拟器
           qemu-mipsel-static --version
 
       - name: build
