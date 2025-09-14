@@ -79,10 +79,9 @@ jobs:
           go build -o bin/m3u8dweb_linux_amd64.${{ github.ref_name }}
           ./bin/m3u8dweb_linux_amd64.${{ github.ref_name }} --help
 
-          set GOOS=linux
-          set GOARCH=mipsle
-          go mod tidy
-          go build -o bin/m3u8dweb_linux_mipsle.${{ github.ref_name }}
+
+          GOOS=linux GOARCH=mipsle go mod tidy
+          GOOS=linux GOARCH=mipsle go build -o bin/m3u8dweb_linux_mipsle.${{ github.ref_name }}
           file bin/m3u8dweb_linux_mipsle.${{ github.ref_name }}
 
       - name: run-test
