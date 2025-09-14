@@ -43,7 +43,7 @@ jobs:
 
   build-test-linux:
     # The type of runner that the job will run on
-    runs-on: windows-latest
+    runs-on: linux-latest
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
@@ -100,9 +100,10 @@ jobs:
 
         - name: build
           run: |
-            sed -i "s/VERSION_NO/${{ github.ref_name }}/g" main.go
-            sed -i "s/BUILD_TIME/$(date +%Y-%m-%dT%H:%M:%S)/g" main.go
-            sed -i "s/COMMIT_ID_HASH/$(git rev-parse --short HEAD)/g" main.go
+            cat main.go
+            sed -i '' "s/VERSION_NO/${{ github.ref_name }}/g" main.go
+            sed -i '' "s/BUILD_TIME/$(date +%Y-%m-%dT%H:%M:%S)/g" main.go
+            sed -i '' "s/COMMIT_ID_HASH/$(git rev-parse --short HEAD)/g" main.go
 
             set GOOS=macos
             set GOARCH=arm64
@@ -128,9 +129,9 @@ jobs:
 
       - name: build
         run: |
-          sed -i "s/VERSION_NO/${{ github.ref_name }}/g" main.go
-          sed -i "s/BUILD_TIME/$(date +%Y-%m-%dT%H:%M:%S)/g" main.go
-          sed -i "s/COMMIT_ID_HASH/$(git rev-parse --short HEAD)/g" main.go
+          sed -i '' "s/VERSION_NO/${{ github.ref_name }}/g" main.go
+          sed -i '' "s/BUILD_TIME/$(date +%Y-%m-%dT%H:%M:%S)/g" main.go
+          sed -i '' "s/COMMIT_ID_HASH/$(git rev-parse --short HEAD)/g" main.go
 
           set GOOS=macos
           set GOARCH=amd64
