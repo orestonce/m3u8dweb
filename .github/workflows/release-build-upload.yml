@@ -73,9 +73,13 @@ jobs:
 
       - name: install queue
         run: |
-          apt-get update
-          apt-get install -y qemu-user-static  # 安装 QEMU 用户模式模拟器
+          sudo apt-get update
+          sudo apt-get install -y qemu-user-static  # 安装 QEMU 用户模式模拟器
           qemu-mipsel-static --version
+
+          sudo dpkg --add-architecture i386 -y # 启用 32 位支持（部分程序可能需要）
+          sudo apt update
+          sudo apt install wine64 wine32 -y # 安装 64 位和 32 位版本
 
       - name: build
         run: |
@@ -83,16 +87,12 @@ jobs:
           sed -i "s/BUILD_TIME/$(date +%Y-%m-%dT%H:%M:%S)/g" main.go
           sed -i "s/COMMIT_ID_HASH/$(git rev-parse --short HEAD)/g" main.go
 
-          set GOOS=linux
-          set GOARCH=amd64
-          go mod tidy
-          go build -o bin/m3u8dweb_linux_amd64.${{ github.ref_name }}
-          ./bin/m3u8dweb_linux_amd64.${{ github.ref_name }} --help
+          GOOS=linux GOARCH=amd64 go mod tidy
+          GOOS=linux GOARCH=amd64 go build -o bin/m3u8dweb_linux_amd64.${{ github.ref_name }}
+          file bin/m3u8dweb_linux_amd64.${{ github.ref_name }}
 
-          set GOOS=linux
-          set GOARCH=mipsle
-          go mod tidy
-          go build -o bin/m3u8dweb_linux_mipsle.${{ github.ref_name }}
+          GOOS=linux GOARCH=mipsle go mod tidy
+          GOOS=linux GOARCH=mipsle go build -o bin/m3u8dweb_linux_mipsle.${{ github.ref_name }}
           file bin/m3u8dweb_linux_mipsle.${{ github.ref_name }}
 
       - name: run-test
