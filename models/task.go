@@ -3,6 +3,7 @@ package models
 import (
 	"crypto/rand"
 	"encoding/hex"
+	"log"
 	"m3u8dweb/db"
 	"sort"
 	"sync"
@@ -96,22 +97,27 @@ func GetTaskById(id string) (task DownloadTask, ok bool) {
 
 var gTaskLocker sync.Mutex
 
-func UpdateTask(task DownloadTask) (ok bool) {
+func UpdateTaskV2(id string, cb func(task *DownloadTask) ) {
 	gTaskLocker.Lock()
 	defer gTaskLocker.Unlock()
 
-	if task.ID == "" {
-		return false
+	if id == "" {
+		return
 	}
 
 	var taskInDb DownloadTask
-	err := db.GetData("tasks", task.ID, &taskInDb)
+	err := db.GetData("tasks", id, &taskInDb)
 	if err != nil {
-		return false
+		log.Println("get task data error", id, err)
+		return
 	}
 
-	err = db.SaveData("tasks", task.ID, task)
-	return err == nil
+	cb(&taskInDb)
+
+	err = db.SaveData("tasks", taskInDb.ID, taskInDb)
+	if err != nil {
+		log.Println("save task data error", id, err)
+	}
 }
 
 func DeleteTask(id string) (ok bool) {

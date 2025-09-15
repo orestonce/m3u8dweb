@@ -115,32 +115,53 @@ func updateTask(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "任务ID不能为空", http.StatusBadRequest)
 		return
 	}
-	var updates map[string]interface{}
+	var updates struct{
+		Status string `json:"status"`
+	}
 	if err := json.NewDecoder(r.Body).Decode(&updates); err != nil {
 		http.Error(w, "解析请求失败", http.StatusBadRequest)
 		return
 	}
 
-	// 获取现有任务
-	task, ok := models.GetTaskById(id)
-	if ok == false {
-		http.Error(w, "任务不存在", http.StatusNotFound)
-		return
-	}
-
+	var ok = false
 	// 应用更新
-	if status, ok := updates["status"].(string); ok {
-		task.Status = status
-	}
-
+	models.UpdateTaskV2(id, func(task *models.DownloadTask) {
+		switch updates.Status {
+		case models.StatusWaiting:
+			if task.Status == models.StatusPaused {
+				task.Status = models.StatusWaiting
+				task.UpdatedAt = time.Now()
+				ok = true
+			} else if stringInList(task.Status, []string{models.StatusWaiting, models.StatusDownloading}) {
+				ok = true
+			}
+		case models.StatusPaused:
+			if stringInList(task.Status, []string{models.StatusDownloading, models.StatusWaiting}) {
+				task.Status = models.StatusPaused
+				task.UpdatedAt = time.Now()
+				ok = true
+			} else if task.Status == models.StatusPaused {
+				ok = true
+			}
+		}
+	})
 	// 保存更新
-	if ok = models.UpdateTask(task); ok == false {
+	if ok == false {
 		http.Error(w, "更新任务失败", http.StatusInternalServerError)
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]string{"status": "success"})
+}
+
+func stringInList(s string, ss []string) bool {
+	for _, one := range ss {
+		if one == s {
+			return true
+		}
+	}
+	return false
 }
 
 // 删除任务
