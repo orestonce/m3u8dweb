@@ -7,9 +7,9 @@ import (
 )
 
 type FastPushData struct {
-	ID        string `json:"id"`
+	ID        string `json:"id,omitempty"`
 	StatusBar string `json:"status_bar,omitempty"`
-	Progress  int    `json:"progress"`
+	Progress  int    `json:"progress,omitempty"`
 }
 
 func RunFastPushThread(ch chan <- []byte) {
@@ -23,13 +23,15 @@ func RunFastPushThread(ch chan <- []byte) {
 
 		var data FastPushData
 		data.ID = getId()
-		data.StatusBar = envStatus.Title + " " + envStatus.StatusBar
+		if envStatus.IsDownloading {
+			data.StatusBar = envStatus.Title + " " + envStatus.StatusBar
+		}
 		data.Progress = envStatus.Percent
 
 
 		bs, err := json.Marshal(data)
 		if err != nil {
-			continue
+			panic(err)
 		}
 
 		select {

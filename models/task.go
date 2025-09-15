@@ -2,8 +2,8 @@ package models
 
 import (
 	"crypto/rand"
+	"encoding/base64"
 	"encoding/binary"
-	"encoding/hex"
 	"io"
 	"log"
 	"m3u8dweb/db"
@@ -92,12 +92,14 @@ func generateID() string {
 		}
 		gIdRand = rand2.New(rand2.NewSource(int64(binary.BigEndian.Uint64(temp))))
 	}
-	b := make([]byte, 16)
+	//数据来源于deepseek:
+	//9 字节, 生成1亿个随机ID时, 碰撞概率约为百万分之一（0.000106%），可忽略不计
+	b := make([]byte, 9)
 	_, err := io.ReadFull(gIdRand, b)
 	if err != nil {
 		panic(err)
 	}
-	return hex.EncodeToString(b)
+	return base64.RawURLEncoding.EncodeToString(b) 	// 12个字符
 }
 
 var gTaskLocker sync.Mutex
