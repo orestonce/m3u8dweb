@@ -4,22 +4,36 @@ import (
 	"github.com/orestonce/m3u8d"
 	"m3u8dweb/models"
 	"os"
+	"sync"
 	"time"
 )
 
-func RunBackendDownloader() {
-	var env = &m3u8d.DownloadEnv{}
-	var id string // 正在下载的任务的id
+var env = &m3u8d.DownloadEnv{}
+var gID string // 正在下载的任务的id
+var gIDLocker sync.Mutex
 
+func getId() string {
+	gIDLocker.Lock()
+	defer gIDLocker.Unlock()
+	return gID
+}
+
+func setId(s string) {
+	gIDLocker.Lock()
+	gID = s
+	gIDLocker.Unlock()
+}
+
+func RunBackendDownloader() {
 	for {
 		time.Sleep(time.Second)
 
-		if id != "" {
+		if getId() != "" {
 			envStatus := env.GetStatus()
 			cleanEnv := false
 			foundTask := false
 
-			models.UpdateTaskV2(id, func(task *models.DownloadTask) {
+			models.UpdateTaskV2(getId(), func(task *models.DownloadTask) {
 				foundTask = true
 				if task.Status == models.StatusPaused {
 					cleanEnv = true
@@ -49,7 +63,7 @@ func RunBackendDownloader() {
 			})
 			if cleanEnv || foundTask == false {	// 后端停止任务，别再下载了
 				env.CloseEnv()
-				id = ""
+				setId("")
 			}
 			continue
 		}
@@ -93,7 +107,7 @@ func RunBackendDownloader() {
 				})
 				continue
 			}
-			id = roTask.ID
+			setId(roTask.ID)
 			models.UpdateTaskV2(roTask.ID, func(task *models.DownloadTask) {
 				task.Status = models.StatusDownloading
 				task.UpdatedAt = time.Now()

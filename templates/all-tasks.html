@@ -338,11 +338,67 @@
         .catch(error => console.error('获取任务列表失败:', error));
     }
 
+    // 在原有的<script>区域添加WebSocket逻辑
+    function initWebSocket() {
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const wsUri = `${protocol}//${window.location.host}/ws/progress`;
+        const websocket = new WebSocket(wsUri);
+
+        websocket.onopen = function(evt) {
+            console.log('WebSocket连接已打开');
+        };
+
+        websocket.onclose = function(evt) {
+            console.log('WebSocket连接关闭，5秒后重试...');
+            setTimeout(initWebSocket, 5000); // 自动重连
+        };
+
+        websocket.onmessage = function(evt) {
+            try {
+                const update = JSON.parse(evt.data);
+                console.log('收到进度更新:', update);
+                updateTaskStatusBar(update.id, update.status_bar);
+            } catch (e) {
+                console.error('解析消息失败:', e);
+            }
+        };
+
+        websocket.onerror = function(evt) {
+            console.error('WebSocket错误:', evt);
+        };
+    }
+
+    // 更新任务的status_bar显示
+    function updateTaskStatusBar(taskId, statusBarText) {
+        const tableBody = document.getElementById('task-table-body');
+        const rows = tableBody.querySelectorAll('tr');
+
+        for (let row of rows) {
+            // 通过操作按钮中的任务ID匹配行
+            const actionBtns = row.querySelectorAll('.action-btn');
+            if (actionBtns.length > 0) {
+                const onclickAttr = actionBtns[0].getAttribute('onclick');
+                const taskIdMatch = onclickAttr.match(/'([^']+)'/);
+
+                if (taskIdMatch && taskIdMatch[1] === taskId) {
+                    const statusBarElem = row.querySelector('.status-bar-text');
+                    if (statusBarElem) {
+                        statusBarElem.textContent = statusBarText || '';
+                    }
+                    break;
+                }
+            }
+        }
+    }
+
     // 初始化页面
     document.addEventListener('DOMContentLoaded', function() {
         // 从页面获取初始数据并渲染
         const initialTasks = JSON.parse(document.getElementById('initial-tasks').textContent);
         renderTasks(initialTasks);
+
+        // 初始化WebSocket
+        initWebSocket();
 
         // 定时刷新任务状态
         setInterval(fetchTasks, 3000);

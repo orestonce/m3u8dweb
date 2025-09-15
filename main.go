@@ -61,6 +61,9 @@ func main() {
 	config.InitDefaultSettings()
 
 	go backend.RunBackendDownloader()
+	ch := make(chan []byte, 1)
+	go backend.RunFastPushThread(ch)
+	go handlers.BroadcastTaskThread(ch)
 
 	// 注册路由，根据是否提供认证信息决定是否启用BasicAuth
 	registerHandler := func(path string, handler http.HandlerFunc) {
@@ -79,6 +82,9 @@ func main() {
 	// 注册API路由
 	registerHandler("/api/tasks", handlers.TaskAPIHandler)
 	registerHandler("/api/settings", handlers.SettingsAPIHandler)
+
+	//快速推送
+	registerHandler("/ws/progress", handlers.TaskWebSocketHandler)
 
 	log.Printf("服务器启动在 %s 端口", *listenAddr)
 	log.Fatal(http.ListenAndServe(*listenAddr, nil))
