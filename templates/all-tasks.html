@@ -230,15 +230,16 @@
                 <td><span class="badge ${getStatusClass(task.status)} status-badge">${task.status}</span></td>
                 <td>
                     <div class="btn-group btn-group-sm">
+                        <!-- 只对非已完成的任务显示暂停/继续按钮 -->
                         ${task.status === '下载中' ? `
                             <button class="btn btn-outline-secondary action-btn" onclick="pauseTask('${task.id}')">
                                 <i class="fas fa-pause"></i>
                             </button>
-                        ` : `
+                        ` : task.status !== '已完成' ? `
                             <button class="btn btn-outline-secondary action-btn" onclick="resumeTask('${task.id}')">
                                 <i class="fas fa-play"></i>
                             </button>
-                        `}
+                        ` : ''}
                         <!-- 新增的详情按钮 -->
                         <button class="btn btn-outline-info action-btn" onclick="showTaskDetail(${JSON.stringify(task).replace(/"/g, '&quot;')})">
                             <i class="fas fa-info-circle"></i>

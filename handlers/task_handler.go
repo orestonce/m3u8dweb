@@ -128,7 +128,7 @@ func updateTask(w http.ResponseWriter, r *http.Request) {
 	models.UpdateTaskV2(id, func(task *models.DownloadTask) {
 		switch updates.Status {
 		case models.StatusWaiting:
-			if task.Status == models.StatusPaused {
+			if stringInList(task.Status, []string{models.StatusPaused, models.StatusFailed}) {
 				task.Status = models.StatusWaiting
 				task.UpdatedAt = time.Now()
 				ok = true
