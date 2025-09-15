@@ -2,9 +2,12 @@ package models
 
 import (
 	"crypto/rand"
+	"encoding/binary"
 	"encoding/hex"
+	"io"
 	"log"
 	"m3u8dweb/db"
+	rand2 "math/rand"
 	"sort"
 	"sync"
 	"time"
@@ -61,7 +64,7 @@ type TaskBackendInfo struct {
 // 创建新任务
 func NewDownloadTask(url, filename string) *DownloadTask {
 	// 生成唯一ID
-	id, _ := generateID()
+	id := generateID()
 
 	return &DownloadTask{
 		ID:        id,
@@ -73,26 +76,28 @@ func NewDownloadTask(url, filename string) *DownloadTask {
 	}
 }
 
+var gIDLocker sync.Mutex
+var gIdRand *rand2.Rand
+
 // 生成唯一ID
-func generateID() (string, error) {
+func generateID() string {
+	gIDLocker.Lock()
+	defer gIDLocker.Unlock()
+
+	if gIdRand == nil {
+		temp := make([]byte, 8)
+		_, err := rand.Read(temp)
+		if err != nil {
+			panic(err)
+		}
+		gIdRand = rand2.New(rand2.NewSource(int64(binary.BigEndian.Uint64(temp))))
+	}
 	b := make([]byte, 16)
-	_, err := rand.Read(b)
+	_, err := io.ReadFull(gIdRand, b)
 	if err != nil {
-		return "", err
+		panic(err)
 	}
-	return hex.EncodeToString(b), nil
-}
-
-func GetTaskById(id string) (task DownloadTask, ok bool) {
-	err := db.GetData("tasks", id, &task)
-
-	if err != nil {
-		return task, false
-	}
-	if task.ID == "" || task.ID != id {
-		return task, false
-	}
-	return task, true
+	return hex.EncodeToString(b)
 }
 
 var gTaskLocker sync.Mutex
