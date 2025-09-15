@@ -11,6 +11,7 @@ https://github.com/orestonce/m3u8d 的web前端实现
 4. 支持设置http、https、socks5代理
 5. 有[webapi文档](api.md)
 6. 命令行支持auth-basic、设置数据库文件路径、设置监听地址
+7. 如果有正在下载的任务，每100毫秒读取一次内存中的下载进度、速度信息，使用websocket推送给前端。（这样前端显得更新速度很快，而且服务端客户端传输的数据很少）
 ````bash
 # 默认参数启动
 ./m3u8dweb

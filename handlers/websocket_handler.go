@@ -19,12 +19,6 @@ var (
 	clientsMu sync.Mutex
 )
 
-// 仅包含需要推送的字段
-type TaskProgressUpdate struct {
-	ID        string `json:"id"`
-	StatusBar string `json:"status_bar"`
-}
-
 // WebSocket处理器
 func TaskWebSocketHandler(w http.ResponseWriter, r *http.Request) {
 	conn, err := upgrader.Upgrade(w, r, nil)

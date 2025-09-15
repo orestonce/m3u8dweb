@@ -19,6 +19,7 @@ func RunFastPushThread(ch chan <- []byte) {
 	for {
 		time.Sleep(time.Millisecond * 100)
 
+		// 以下逻辑只读写内存，100毫秒执行一次问题不大
 		envStatus := env.GetStatus()
 
 		var data FastPushData
@@ -35,13 +36,13 @@ func RunFastPushThread(ch chan <- []byte) {
 		}
 
 		select {
-		case <- ticker.C:
+		case <- ticker.C:	//5秒时间到了，不管有没有变更，都推送一下，方便websocket保活
 		default:
-			if bytes.Equal(bs, lastPushBs) {
+			if bytes.Equal(bs, lastPushBs) {	// 数据一样，不推了
 				continue
 			}
 		}
-		ch <- bs
+		ch <- bs	// 写给推送线程对应的channel
 		lastPushBs = bs
 	}
 }
