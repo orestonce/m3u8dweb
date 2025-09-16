@@ -6,8 +6,8 @@ github.com/gorilla/websocket v1.5.3 h1:saDtZ6Pbx/0u+bgYQ3q96pZgCzfhKXGPqt7kZ72aN
 github.com/gorilla/websocket v1.5.3/go.mod h1:YR8l580nyteQvAITg2hZ9XVh4b55+EU/adAjf1fMHhE=
 github.com/orestonce/gopool v0.0.0-20220508090328-d7d56d45b171 h1:NnOl6HTrhrlTT7aaAybVOtq+fEztGFMoQtegckgwLdk=
 github.com/orestonce/gopool v0.0.0-20220508090328-d7d56d45b171/go.mod h1:MCQUrAPiG9/PTjHJuGqWLasKbIaG6z62KO6kfp90byM=
-github.com/orestonce/m3u8d v1.26.2 h1:Y6db/UgRnlw7yuPFmS0tqootYsIZPG5hprxc03FySYw=
-github.com/orestonce/m3u8d v1.26.2/go.mod h1:aK5DJhiMcmV5AbX6yJeC840MTms+1VWcQaoWrGuc5lI=
+github.com/orestonce/m3u8d v1.26.6 h1:5iEbPwY1K3FpIfotASBtOJD3s3VCnG07zK9dUnIy7Vw=
+github.com/orestonce/m3u8d v1.26.6/go.mod h1:aK5DJhiMcmV5AbX6yJeC840MTms+1VWcQaoWrGuc5lI=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/stretchr/testify v1.10.0 h1:Xv5erBjTwe/5IxqUQTdXv5kgmIvbHo3QQyRwhJsOfJA=

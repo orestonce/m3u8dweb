@@ -23,12 +23,11 @@ func RunFastPushThread(ch chan <- []byte) {
 		envStatus := env.GetStatus()
 
 		var data FastPushData
-		data.ID = getId()
 		if envStatus.IsDownloading {
+			data.ID = envStatus.TaskId
 			data.StatusBar = envStatus.Title + " " + envStatus.StatusBar
+			data.Progress = envStatus.Percent
 		}
-		data.Progress = envStatus.Percent
-
 
 		bs, err := json.Marshal(data)
 		if err != nil {
