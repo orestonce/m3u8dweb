@@ -17,9 +17,9 @@ var fs embed.FS
 
 // 声明将在编译时注入的变量
 var (
-	version   = "VERSION_NO" 		// 版本号
-	buildTime = "BUILD_TIME"		// 编译时间
-	commit    = "COMMIT_ID_HASH"	// Git提交哈希
+	version   = "VERSION_NO"     // 版本号
+	buildTime = "BUILD_TIME"     // 编译时间
+	commit    = "COMMIT_ID_HASH" // Git提交哈希
 )
 
 // basicAuth 中间件实现HTTP基本认证
@@ -47,6 +47,9 @@ func main() {
 	dbPath := flag.String("db", "downloads.db", "数据库文件路径")
 	authUser := flag.String("auth-user", "", "Basic认证用户名")
 	authPass := flag.String("auth-pass", "", "Basic认证密码")
+
+	certFile := flag.String("cert-file", "", "https证书文件")
+	keyFile := flag.String("key-file", "", "https私钥文件")
 
 	// 解析命令行参数
 	flag.Parse()
@@ -87,5 +90,9 @@ func main() {
 	registerHandler("/ws/progress", handlers.TaskWebSocketHandler)
 
 	log.Printf("服务器启动在 %s 端口", *listenAddr)
-	log.Fatal(http.ListenAndServe(*listenAddr, nil))
+	if *certFile != "" && *keyFile != "" {
+		log.Fatal(http.ListenAndServeTLS(*listenAddr, *certFile, *keyFile, nil))
+	} else {
+		log.Fatal(http.ListenAndServe(*listenAddr, nil))
+	}
 }
