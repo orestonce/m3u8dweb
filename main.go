@@ -15,6 +15,9 @@ import (
 //go:embed templates/*
 var fs embed.FS
 
+//go:embed favicon.ico
+var favicon []byte
+
 // 声明将在编译时注入的变量
 var (
 	version   = "VERSION_NO"     // 版本号
@@ -88,6 +91,9 @@ func main() {
 
 	//快速推送
 	registerHandler("/ws/progress", handlers.TaskWebSocketHandler)
+	registerHandler("/favicon.ico", func(writer http.ResponseWriter, request *http.Request) {
+		writer.Write(favicon)
+	})
 
 	log.Printf("服务器启动在 %s 端口", *listenAddr)
 	if *certFile != "" && *keyFile != "" {
